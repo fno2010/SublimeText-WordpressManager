@@ -1,0 +1,14 @@
+[
+    {
+        "caption": "Wordpress Manager: Hello",
+        "command": "wpm_hello"
+    },
+    {
+        "caption": "Wordpress Manager: New Account",
+        "command": "wpm_new_account"
+    },
+    {
+        "caption": "Wordpress Manager: Connect Account",
+        "command": "wpm_connect_account"
+    }
+]

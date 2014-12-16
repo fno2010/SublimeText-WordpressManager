@@ -10,5 +10,9 @@
     {
         "caption": "Wordpress Manager: Connect Account",
         "command": "wpm_connect_account"
+    },
+    {
+        "caption": "Wordpress Manager: Browser Posts",
+        "command": "wpm_get_posts"
     }
 ]

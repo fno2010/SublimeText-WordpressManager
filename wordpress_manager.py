@@ -1,14 +1,27 @@
-import sublime, sublime_plugin
-import wordpress_xmlrpc
+import sublime
+import sublime_plugin
 import os
+import sys
 import shutil
 import json
+from wordpress_xmlrpc import Client
+from wordpress_xmlrpc.methods.posts import GetPosts
 
 # ======== Global Arguments ====================================================
 
 rootDir = os.path.join(sublime.packages_path(), 'Wordpress Manager')
 accountsDir = os.path.join(rootDir, 'accounts')
 configName = 'default.wpm-config'
+
+isDebug = True
+# print overly informative messages?
+isDebugVerbose = True
+
+# timeout for a Sublime status bar messages [ms]
+messageTimeout = 250
+
+# Client of wordpress account
+wpmClient = None
 
 # ======== Messaging ===========================================================
 
@@ -125,6 +138,7 @@ class WpmHelloCommand(sublime_plugin.TextCommand):
 	print 'hello, wordpress_manager'
 	"""
 	def run(self, edit):
+		global date
 		printMessage("hello, wordpress_manager")
 
 class WpmNewAccount(sublime_plugin.WindowCommand):
@@ -137,6 +151,8 @@ class WpmNewAccount(sublime_plugin.WindowCommand):
 
 	def create(self, account):
 		account_dir = os.path.join(accountsDir, account)
+		if os.path.exists(accountsDir) is False:
+			os.mkdir(accountsDir)
 		if os.path.exists(account_dir) is True:
 			printMessage("Account Exists, Cannot Create!")
 			return
@@ -156,10 +172,11 @@ class WpmConnectAccount(sublime_plugin.WindowCommand):
 		self.window.show_quick_panel(self.accounts, self.connect)
 
 	def connect(self, index):
+		global wpmClient
 		account = os.path.join(accountsDir, self.accounts[index])
 		config = os.path.join(account, configName)
 		config_map = json.load(open(config))
-		print config_map
+		wpmClient = Client(config_map['url'], config_map['username'], config_map['password'])
 
 class WpmDisconnectAccount(sublime_plugin.WindowCommand):
 	"""
@@ -186,15 +203,22 @@ class WpmGetPosts(sublime_plugin.WindowCommand):
 	"""
 	Get a list of all posts from current account.
 	"""
-	def run(self, arg):
-		pass
+	def run(self):
+		self.posts_list = wpmClient.call(GetPosts())
+		self.title_list = [p.title for p in self.posts_list]
+		self.window.show_quick_panel(self.title_list, self.editPost)
 
-class WpmEditPost(sublime_plugin.WindowCommand):
+	def editPost(self, index):
+		post = self.posts_list[index]
+		view = self.window.new_file()
+		view.run_command('wpm_get_post', {'post': post})
+
+class WpmGetPost(sublime_plugin.TextCommand):
 	"""
 	Edit a post entry.
 	"""
-	def run(self, arg):
-		pass
+	def run(self, edit, post):
+		self.view.insert(edit, 0, post.content)
 
 class WpmNewPost(sublime_plugin.WindowCommand):
 	"""
